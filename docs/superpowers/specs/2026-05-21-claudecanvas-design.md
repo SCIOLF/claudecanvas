@@ -65,7 +65,7 @@ ClaudeCanvas est une application de bureau qui permet de démarrer et contrôler
 ### 3.1 `App`
 - Composant racine
 - Initialise le store Zustand (`useTerminalStore`)
-- Gère le routing entre les vues (main, workspace manager)
+- Orchestre le layout global : `Sidebar` à gauche, `MainPanel` à droite (pas de routing multi-vues — tout est dans un seul layout)
 
 ### 3.2 `Sidebar`
 - Liste scrollable de `TerminalCard`
@@ -73,9 +73,9 @@ ClaudeCanvas est une application de bureau qui permet de démarrer et contrôler
 - Largeur fixe : 140px
 
 ### 3.3 `TerminalCard`
-- Affiche le label du terminal avec sa couleur d'accent
-- Badge de statut : `● actif` (vert) · `● attend` (orange) · `● erreur` (rouge)
-- Miniature xterm.js live (instance xterm.js réduite via `transform: scale()`)
+- Affiche le label du terminal avec sa couleur d'accent (auto-assignée à la création depuis une palette fixe de 8 couleurs, cyclique)
+- Badge de statut : `● actif` (vert) · `● attend` (orange) · `● erreur` (rouge) · `● terminé` (gris)
+- Miniature xterm.js live : instance xterm.js dédiée avec police réduite (6px) et dimensions fixes — pas de `transform: scale()` (approche évitée car rendu flou et capture d'events problématique)
 - Bordure colorée sur la carte active
 - Clic → change le terminal actif dans le store
 
@@ -87,11 +87,11 @@ ClaudeCanvas est une application de bureau qui permet de démarrer et contrôler
 ### 3.5 `NewTerminalModal`
 - Champs : répertoire de travail (avec picker natif), label, prompt initial (optionnel)
 - Validation : répertoire obligatoire, label obligatoire
-- À la confirmation : `invoke("spawn_terminal", ...)`
+- À la confirmation : `invoke("spawn_terminal", ...)` — si `start_prompt` est renseigné, il est envoyé automatiquement via `invoke("send_input", {id, data: startPrompt + "\n"})` dès que le PTY est prêt (après réception du premier `terminal:output:{id}`)
 
 ### 3.6 `WorkspaceManager`
 - Bouton `💾 Sauvegarder` : snapshot de la config de tous les terminaux ouverts → `invoke("save_workspace")`
-- Bouton `📂 Restaurer` : `invoke("load_workspace")` → re-spawn de chaque terminal avec sa config sauvegardée
+- Bouton `📂 Restaurer` : `invoke("load_workspace")` → re-spawn de chaque terminal avec sa config sauvegardée. De nouveaux UUIDs sont générés à la restauration (les IDs sauvegardés ne sont pas réutilisés) pour éviter les collisions avec des terminaux déjà ouverts.
 
 ---
 
