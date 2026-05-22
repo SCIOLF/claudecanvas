@@ -13,6 +13,7 @@ export function NewTerminalModal({ onClose }: NewTerminalModalProps) {
   const [label, setLabel] = useState('');
   const [startPrompt, setStartPrompt] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { terminals, addTerminal } = useTerminalStore();
 
@@ -21,6 +22,7 @@ export function NewTerminalModal({ onClose }: NewTerminalModalProps) {
   const handleCreate = async () => {
     if (!canCreate) return;
     setLoading(true);
+    setError(null);
     const id = uuidv4();
     const color = getAccentColor(terminals.length);
     const config = {
@@ -41,7 +43,15 @@ export function NewTerminalModal({ onClose }: NewTerminalModalProps) {
       addTerminal(config);
       onClose();
     } catch (e) {
-      console.error('Erreur spawn_terminal:', e);
+      const msg = String(e);
+      // Message d'erreur lisible selon la cause probable
+      if (msg.includes('No such file') || msg.includes('not found') || msg.includes('ENOENT')) {
+        setError('Impossible de lancer claude — binaire introuvable. Vérifiez que Claude Code est installé.');
+      } else if (msg.includes('permission') || msg.includes('EACCES')) {
+        setError('Permission refusée. Vérifiez les droits d\'accès au répertoire.');
+      } else {
+        setError(`Erreur : ${msg}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -122,6 +132,12 @@ export function NewTerminalModal({ onClose }: NewTerminalModalProps) {
             onChange={(e) => setStartPrompt(e.target.value)}
           />
         </label>
+
+        {error && (
+          <div style={{ background: '#3d1a1a', border: '1px solid #f85149', borderRadius: '4px', padding: '8px 12px', fontSize: '11px', color: '#f85149' }}>
+            ⚠ {error}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
           <button

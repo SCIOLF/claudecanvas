@@ -25,15 +25,16 @@ export function Sidebar({ onNewTerminal }: SidebarProps) {
   const addButtonStyle: React.CSSProperties = {
     border: '1px dashed #30363d',
     borderRadius: '6px',
-    padding: '8px',
+    padding: '6px 0',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
-    color: '#444',
+    color: '#555',
     marginTop: 'auto',
-    fontSize: '18px',
+    fontSize: '16px',
     background: 'transparent',
+    width: '100%',
   };
 
   return (
@@ -53,7 +54,7 @@ export function Sidebar({ onNewTerminal }: SidebarProps) {
       ))}
 
       <button style={addButtonStyle} onClick={onNewTerminal} title="Nouveau terminal">
-        ＋
+        +
       </button>
     </aside>
   );

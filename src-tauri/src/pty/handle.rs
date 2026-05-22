@@ -3,6 +3,62 @@ use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
+/// Trouve le chemin absolu de `claude` en cherchant dans les emplacements courants.
+/// Retourne le chemin absolu si trouvé, sinon `"claude"` (fallback au PATH).
+fn find_claude_binary() -> String {
+    let home = std::env::var("HOME").unwrap_or_default();
+
+    // Chemins candidats par ordre de priorité
+    let candidates = [
+        format!("{}/.local/bin/claude", home),
+        "/usr/local/bin/claude".to_string(),
+        "/usr/bin/claude".to_string(),
+    ];
+
+    for path in &candidates {
+        if std::path::Path::new(path).exists() {
+            return path.clone();
+        }
+    }
+
+    // Tenter `which claude` comme dernier recours
+    if let Ok(output) = std::process::Command::new("which").arg("claude").output() {
+        let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        if !path.is_empty() {
+            return path;
+        }
+    }
+
+    "claude".to_string()
+}
+
+/// Construit un PATH étendu incluant les répertoires nvm et ~/.local/bin.
+fn build_extended_path(home: &str, current_path: &str) -> String {
+    let mut extras = vec![
+        format!("{}/.local/bin", home),
+        "/usr/local/bin".to_string(),
+    ];
+
+    // Ajouter tous les bin/ des versions node installées via nvm
+    let nvm_dir = format!("{}/.nvm/versions/node", home);
+    if let Ok(entries) = std::fs::read_dir(&nvm_dir) {
+        let mut versions: Vec<String> = entries
+            .flatten()
+            .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
+            .map(|e| format!("{}/bin", e.path().display()))
+            .collect();
+        versions.sort_by(|a, b| b.cmp(a)); // plus récent en premier
+        extras.extend(versions);
+    }
+
+    let extra = extras.join(":");
+    if current_path.is_empty() {
+        extra
+    } else {
+        format!("{}:{}", extra, current_path)
+    }
+}
+
 pub struct PtyHandle {
     writer: Arc<Mutex<Box<dyn Write + Send>>>,
     child: Arc<Mutex<Box<dyn portable_pty::Child + Send + Sync>>>,
@@ -24,8 +80,15 @@ impl PtyHandle {
             })
             .map_err(|e| e.to_string())?;
 
-        let mut cmd = CommandBuilder::new("claude");
+        let claude_bin = find_claude_binary();
+        let mut cmd = CommandBuilder::new(&claude_bin);
         cmd.cwd(dir);
+
+        // Étendre le PATH pour que claude puisse trouver node/npm (nvm, ~/.local/bin, etc.)
+        let home = std::env::var("HOME").unwrap_or_default();
+        let current_path = std::env::var("PATH").unwrap_or_default();
+        let extended_path = build_extended_path(&home, &current_path);
+        cmd.env("PATH", extended_path);
 
         let child = pair
             .slave
