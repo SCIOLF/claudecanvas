@@ -1,51 +1,59 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useState } from 'react';
+import { Sidebar } from './components/Sidebar/Sidebar';
+import { MainPanel } from './components/MainPanel/MainPanel';
+import { NewTerminalModal } from './components/NewTerminalModal';
+import { WorkspaceManager } from './components/WorkspaceManager';
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+export default function App() {
+  const [showModal, setShowModal] = useState(false);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const titlebarStyle: React.CSSProperties = {
+    background: '#161b22',
+    borderBottom: '1px solid #21262d',
+    padding: '6px 16px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    height: '38px',
+    minHeight: '38px',
+  };
+
+  const appStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    overflow: 'hidden',
+  };
+
+  const bodyStyle: React.CSSProperties = {
+    display: 'flex',
+    flex: 1,
+    overflow: 'hidden',
+  };
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <div style={appStyle}>
+      <header style={titlebarStyle}>
+        <span style={{ color: '#58a6ff', fontWeight: 'bold', fontSize: '13px' }}>
+          ⬡ ClaudeCanvas
+        </span>
+        <button
+          style={{ background: '#21262d', border: '1px solid #30363d', color: '#7ee787', borderRadius: '4px', padding: '3px 10px', fontSize: '10px', cursor: 'pointer', marginLeft: '8px' }}
+          onClick={() => setShowModal(true)}
+        >
+          ＋ Nouveau terminal
+        </button>
+        <div style={{ marginLeft: 'auto' }}>
+          <WorkspaceManager />
+        </div>
+      </header>
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div style={bodyStyle}>
+        <Sidebar onNewTerminal={() => setShowModal(true)} />
+        <MainPanel />
       </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+      {showModal && <NewTerminalModal onClose={() => setShowModal(false)} />}
+    </div>
   );
 }
-
-export default App;
