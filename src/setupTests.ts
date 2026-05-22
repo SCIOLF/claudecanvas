@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 
 // Mock ResizeObserver (not available in jsdom)
-global.ResizeObserver = vi.fn(function ResizeObserver() {
+window.ResizeObserver = vi.fn(function ResizeObserver() {
   return {
     observe: vi.fn(),
     unobserve: vi.fn(),

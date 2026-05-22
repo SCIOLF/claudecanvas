@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { TerminalConfig, WorkspaceConfig, TerminalStatus } from '../types';
+import type { TerminalConfig } from '../types';
 import { ACCENT_COLORS, getAccentColor } from '../types';
 
 describe('types', () => {
